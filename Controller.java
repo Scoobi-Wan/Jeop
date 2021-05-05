@@ -49,12 +49,21 @@ public class Controller {
             Elements doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
 
 
+            String[] jeopardyCategoriesArray = new String[6];
+            String[] doubleJeopardyCategoriesArray = new String[6];
             ArrayList<String> jeopardyCluesAL = new ArrayList<String>();
             ArrayList<String> jeopardyResponsesAL = new ArrayList<String>();
             ArrayList<String> doubleJeopardyCluesAL = new ArrayList<String>();
             ArrayList<String> doubleJeopardyResponsesAL = new ArrayList<String>();
 
-
+            // LOOP: Adds category names to array, removing HTML
+            int catIndex = 0;
+            for (Element el: jeopardyCategories) {
+                jeopardyCategoriesArray[catIndex++] = el.text();
+            } catIndex = 0;
+            for (Element el: doubleJeopardyCategories) {
+                doubleJeopardyCategoriesArray[catIndex++] = el.text();
+            }
 
             //Mainly used for debugging + to see if missing anything in scrape
 
@@ -93,9 +102,16 @@ public class Controller {
             padClues(jeopardyCluesAL, jeopardyResponsesAL);
             padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
 
-            int myint = 0;
+            int clueIndex = 0;
+            String currentCategory = "";
+            for (String clue: jeopardyCluesAL) {
+                currentCategory = jeopardyCategoriesArray[clueIndex % 6];
+                System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex++ + 1) + " " + clue);
+            } clueIndex = 0;
+
             for (String clue: doubleJeopardyCluesAL) {
-                System.out.println("CLUE " + (myint++ + 1) + " " + clue);
+                currentCategory = doubleJeopardyCategoriesArray[clueIndex % 6];
+                System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex++ + 1) + " " + clue);
             }
 
 
