@@ -1,6 +1,7 @@
 package com.company;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,7 +19,7 @@ public class Main {
 
             Elements categories = doc.getElementsByClass("category_name");
             Elements clues = doc.getElementsByClass("clue_text");
-            Elements responses = doc.getElementsContainingText("correct_response");
+            Elements clueDivs = doc.getElementsByClass("clue");
 
             for (Element category: categories) {
                 System.out.println(category.text());
@@ -28,9 +29,25 @@ public class Main {
                 System.out.println(clue.text());
             }
 
-            for (Element response: responses) {
-                System.out.println(response.text());
+            for (Element clueDiv: clueDivs) {
+                String[] clueDivPieces = String.valueOf(clueDiv).split("correct_response&quot;>");
+                if (clueDivPieces.length > 1) {
+                    String correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
+                    correctResponse = correctResponse.replace("&lt;//i&gt;", "");
+                    clueDivPieces = correctResponse.split("&lt;");
+                    correctResponse = clueDivPieces[0].replace("&amp;", "&");
+                    correctResponse = correctResponse.replace("&quot;", "\"");
+                    correctResponse = correctResponse.replace("<i>", "");
+                    correctResponse = correctResponse.replace("</i>", "");
+                    clueDivPieces = correctResponse.split("</em>");
+                    correctResponse = clueDivPieces[0];
+
+                    System.out.println(correctResponse);
+                }
+
             }
+
+
 
 
         } catch (IOException e) {
