@@ -12,8 +12,8 @@ public class Controller {
 
     /*
     FUNCTION: scrapeGames
-    PARAMETERS: None (For now)
-    RETURN: boolean - true if successful scrape, false if any errors
+    @param: None (For now)
+    @return: boolean - true if successful scrape, false if any errors
     PURPOSE: Connects to j-Archive.com and downloads Jeopardy! game show information
              including categories, clues, correct responses, dollar amount, show date.
              Stores clue information in a database using JDBC
@@ -46,47 +46,53 @@ public class Controller {
             Elements doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
             Elements doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
 
+            String[] jeopardyCluesArray = new String[30];
+            String[] jeopardyResponsesArray = new String[30];
+            String[] doubleJeopardyCluesArray = new String[30];
+            String[] doubleJeopardyResponsesArray = new String[30];
+
+            int jeopardyCluesArrayIndex = 0;
+            int jeopardyResponsesArrayIndex = 0;
+            int doubleJeopardyCluesArrayIndex = 0;
+            int doubleJeopardyResponsesArrayIndex = 0;
+
+
+
+
+            /*
+            Mainly used for debugging + to see if missing anything in scrape
+
             System.out.println("Jeopardy Round Categories Found " + jeopardyCategories.size());
             System.out.println("Jeopardy Round Clues Found " + jeopardyClues.size());
             System.out.println("Jeopardy Round ClueDivs Found " + jeopardyClueDivs.size());
             System.out.println("Double Jeopardy Round Categories Found " + doubleJeopardyCategories.size());
             System.out.println("Double Jeopardy Round Clues Found " + doubleJeopardyClues.size());
             System.out.println("Double Jeopardy Round ClueDivs Found " + doubleJeopardyClueDivs.size());
+            */
 
             if (jeopardyCategories.size() < 6 || doubleJeopardyCategories.size() < 6) {
                 System.out.println("ERROR: Missing categories in show #" + showNum);
                 return false;
             }
-            /*
 
 
-            for (Element category: categories) {
-                System.out.println(category.text());
+            for (Element clue: jeopardyClues) {
+                jeopardyCluesArray[jeopardyCluesArrayIndex++] = String.valueOf(clue);
             }
 
-            for (Element clue: clues) {
-                System.out.println(clue.text());
+            for (Element clue: doubleJeopardyClues) {
+                doubleJeopardyCluesArray[doubleJeopardyCluesArrayIndex++] = String.valueOf(clue);
             }
 
-            for (Element clueDiv: clueDivs) {
-                String[] clueDivPieces = String.valueOf(clueDiv).split("correct_response&quot;>");
-                if (clueDivPieces.length > 1) {
-                    String correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
-                    correctResponse = correctResponse.replace("&lt;//i&gt;", "");
-                    clueDivPieces = correctResponse.split("&lt;");
-                    correctResponse = clueDivPieces[0].replace("&amp;", "&");
-                    correctResponse = correctResponse.replace("&quot;", "\"");
-                    correctResponse = correctResponse.replace("<i>", "");
-                    correctResponse = correctResponse.replace("</i>", "");
-                    clueDivPieces = correctResponse.split("</em>");
-                    correctResponse = clueDivPieces[0];
-
-                    System.out.println(correctResponse);
-                }
-
+            for (Element clueDiv: jeopardyClueDivs) {
+                jeopardyResponsesArray[jeopardyResponsesArrayIndex++] = findResponse(clueDiv);
             }
 
-           */
+            for (Element clueDiv: doubleJeopardyClueDivs) {
+                doubleJeopardyResponsesArray[doubleJeopardyResponsesArrayIndex++] = findResponse(clueDiv);
+            }
+
+
 
 
         } catch (IOException e) {
@@ -95,6 +101,29 @@ public class Controller {
 
         return true;
 
+    }
+
+    /*
+    FUNCTION: findResponse
+    @param: Element clueDiv - containing the correct response as a JS string within
+    @return: String - the parsed correct response
+     */
+    private String findResponse(Element clueDiv) {
+
+        String correctResponse = "";
+        String[] clueDivPieces = String.valueOf(clueDiv).split("correct_response&quot;>");
+        if (clueDivPieces.length > 1) {
+            correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
+            correctResponse = correctResponse.replace("&lt;//i&gt;", "");
+            clueDivPieces = correctResponse.split("&lt;");
+            correctResponse = clueDivPieces[0].replace("&amp;", "&");
+            correctResponse = correctResponse.replace("&quot;", "\"");
+            correctResponse = correctResponse.replace("<i>", "");
+            correctResponse = correctResponse.replace("</i>", "");
+            clueDivPieces = correctResponse.split("</em>");
+            correctResponse = clueDivPieces[0];
+        }
+        return correctResponse;
     }
 
 }
