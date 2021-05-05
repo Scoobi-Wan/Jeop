@@ -4,8 +4,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import java.util.ArrayList;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class Controller {
 
@@ -46,21 +48,15 @@ public class Controller {
             Elements doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
             Elements doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
 
-            String[] jeopardyCluesArray = new String[30];
-            String[] jeopardyResponsesArray = new String[30];
-            String[] doubleJeopardyCluesArray = new String[30];
-            String[] doubleJeopardyResponsesArray = new String[30];
 
-            int jeopardyCluesArrayIndex = 0;
-            int jeopardyResponsesArrayIndex = 0;
-            int doubleJeopardyCluesArrayIndex = 0;
-            int doubleJeopardyResponsesArrayIndex = 0;
+            ArrayList<String> jeopardyCluesAL = new ArrayList<String>();
+            ArrayList<String> jeopardyResponsesAL = new ArrayList<String>();
+            ArrayList<String> doubleJeopardyCluesAL = new ArrayList<String>();
+            ArrayList<String> doubleJeopardyResponsesAL = new ArrayList<String>();
 
 
 
-
-            /*
-            Mainly used for debugging + to see if missing anything in scrape
+            //Mainly used for debugging + to see if missing anything in scrape
 
             System.out.println("Jeopardy Round Categories Found " + jeopardyCategories.size());
             System.out.println("Jeopardy Round Clues Found " + jeopardyClues.size());
@@ -68,7 +64,7 @@ public class Controller {
             System.out.println("Double Jeopardy Round Categories Found " + doubleJeopardyCategories.size());
             System.out.println("Double Jeopardy Round Clues Found " + doubleJeopardyClues.size());
             System.out.println("Double Jeopardy Round ClueDivs Found " + doubleJeopardyClueDivs.size());
-            */
+
 
             if (jeopardyCategories.size() < 6 || doubleJeopardyCategories.size() < 6) {
                 System.out.println("ERROR: Missing categories in show #" + showNum);
@@ -77,19 +73,29 @@ public class Controller {
 
 
             for (Element clue: jeopardyClues) {
-                jeopardyCluesArray[jeopardyCluesArrayIndex++] = String.valueOf(clue);
+                jeopardyCluesAL.add(String.valueOf(clue));
             }
 
             for (Element clue: doubleJeopardyClues) {
-                doubleJeopardyCluesArray[doubleJeopardyCluesArrayIndex++] = String.valueOf(clue);
+                doubleJeopardyCluesAL.add(String.valueOf(clue));
             }
 
             for (Element clueDiv: jeopardyClueDivs) {
-                jeopardyResponsesArray[jeopardyResponsesArrayIndex++] = findResponse(clueDiv);
+                jeopardyResponsesAL.add(findResponse(clueDiv));
             }
 
             for (Element clueDiv: doubleJeopardyClueDivs) {
-                doubleJeopardyResponsesArray[doubleJeopardyResponsesArrayIndex++] = findResponse(clueDiv);
+                doubleJeopardyResponsesAL.add(findResponse(clueDiv));
+            }
+
+            cleanClues(jeopardyCluesAL);
+            cleanClues(doubleJeopardyCluesAL);
+            padClues(jeopardyCluesAL, jeopardyResponsesAL);
+            padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
+
+            int myint = 0;
+            for (String clue: doubleJeopardyCluesAL) {
+                System.out.println("CLUE " + (myint++ + 1) + " " + clue);
             }
 
 
@@ -125,5 +131,43 @@ public class Controller {
         }
         return correctResponse;
     }
+
+    private void padClues(ArrayList<String> clueArray, ArrayList<String> responseArray) {
+        if (clueArray.size() == 30) {
+            return;
+        } else {
+            int index = 0;
+            while (index < 30) {
+                if (responseArray.get(index).equals("")) {
+                    clueArray.add(index, "BLANK");
+                }
+                index++;
+            }
+        }
+    }
+
+    private void cleanClues(ArrayList<String> clueArray) {
+        int index = 0;
+        while (index < clueArray.size()) {
+            String clue = clueArray.get(index);
+            clue = clue.replace("<span class=\"nobreak\">", "");
+            clue = clue.replace("</span>", "");
+            clue = clue.replace("&amp;", "&");
+
+            // remove clue if it contains an anchor link - set to BLANK
+            if (clue.contains("a href")) {
+                clueArray.set(index, "BLANK");
+                index++;
+                continue;
+            }
+            String[] splitClue = clue.split(">");
+            clue = splitClue[1];
+            splitClue = clue.split("</");
+            clue = splitClue[0];
+            clueArray.set(index, clue);
+            index++;
+        }
+    }
+
 
 }
