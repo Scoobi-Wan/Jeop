@@ -28,12 +28,13 @@ public class Controller {
     Elements finalJeopardyCategory;
     Element finalJeopardyClue;
     Elements finalJeopardyClueDiv;
+    String showNum;
 
 
     /*
     FUNCTION: scrapeGames
     @param: None (For now)
-    @return: boolean - true if successful scrape, false if any errors
+    @return boolean - true if successful scrape, false if any errors
     PURPOSE: Connects to j-Archive.com and downloads Jeopardy! game show information
              including categories, clues, correct responses, dollar amount, show date.
              Stores clue information in a database using JDBC
@@ -44,72 +45,88 @@ public class Controller {
         try {
             Document doc = Jsoup.connect("https://www.j-archive.com/showgame.php?game_id=6696").get();
 
-            // Parse page's title to get show number for debugging purposes
-            String showNum = doc.title().split("#")[1].split(",")[0];
+            // Calls method to set all the Element(s) variables
+            getTheElements(doc);
 
-            // System.out.printf("Title: %s\n", doc.title());
+            // Calls method to initialize arrays for categories/clues/responses
+            initializeArrays();
 
-            // These 3 lines get the elements containing each round of the game
-            jeopardyRound = doc.getElementById("jeopardy_round");
-            doubleJeopardyRound = doc.getElementById("double_jeopardy_round");
-            finalJeopardyRound = doc.getElementById("final_jeopardy_round");
-
-            // These 3 lines get the categories, clues and clueDivs for the regular Jeopardy round
-            // jeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
-            jeopardyCategories = jeopardyRound.getElementsByClass("category_name");
-            jeopardyClues = jeopardyRound.getElementsByClass("clue_text");
-            jeopardyClueDivs = jeopardyRound.getElementsByClass("clue");
-
-            // These 3 lines get the categories, clues and clueDivs for the double Jeopardy round
-            // doubleJeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
-            doubleJeopardyCategories = doubleJeopardyRound.getElementsByClass("category_name");
-            doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
-            doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
-
-            finalJeopardyCategory = finalJeopardyRound.getElementsByClass("category_name");
-            finalJeopardyClue = finalJeopardyRound.getElementById("clue_FJ");
-            finalJeopardyClueDiv = finalJeopardyRound.getElementsByClass("category");
-            jeopardyCategoriesArray = new String[6];
-            doubleJeopardyCategoriesArray = new String[6];
-            jeopardyCluesAL = new ArrayList<String>();
-            jeopardyResponsesAL = new ArrayList<String>();
-            doubleJeopardyCluesAL = new ArrayList<String>();
-            doubleJeopardyResponsesAL = new ArrayList<String>();
-
-            // LOOP: Adds category names to array, removing HTML
-            int catIndex = 0;
-            for (Element el: jeopardyCategories) {
-                jeopardyCategoriesArray[catIndex++] = el.text();
-            } catIndex = 0;
-            for (Element el: doubleJeopardyCategories) {
-                doubleJeopardyCategoriesArray[catIndex++] = el.text();
+            // if populateArrays() fails, skip this game (missing info)
+            if (populateArrays() == false) {
+                System.out.println("This will be useful when we are in a loop later!");
             }
 
-            //Mainly used for debugging + to see if missing anything in scrape
-
-            if (jeopardyCategories.size() < 6 || doubleJeopardyCategories.size() < 6) {
-                System.out.println("ERROR: Missing categories in show #" + showNum);
-                return false;
-            }
-
-
-            populateArrays();
-
+            // Call method to remove all HTML from the clue text for each round
             cleanClues(jeopardyCluesAL);
             cleanClues(doubleJeopardyCluesAL);
+
+            // Call method to add 'BLANK' clues as placeholders to keep clues/responses aligned
             padClues(jeopardyCluesAL, jeopardyResponsesAL);
             padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
-
-            printRound(3);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        // This point in the code signifies a successful scrape
         return true;
-
     }
 
+    /*
+    FUNCTION: initializeArrays
+    PURPOSE: Initialize instance variables, clean up the main scrapeGames method
+    @param none
+    @return none
+     */
+    private void initializeArrays() {
+        jeopardyCategoriesArray = new String[6];
+        doubleJeopardyCategoriesArray = new String[6];
+        jeopardyCluesAL = new ArrayList<String>();
+        jeopardyResponsesAL = new ArrayList<String>();
+        doubleJeopardyCluesAL = new ArrayList<String>();
+        doubleJeopardyResponsesAL = new ArrayList<String>();
+    }
+
+    /*
+    FUNCTION: getTheElements
+    PURPOSE: Initializes instance variables to respective document elements
+    @param Document doc: The main document element from the j-Archive HTML scrape
+    @return none
+     */
+    private void getTheElements(Document doc) {
+
+        // These 3 lines get the elements containing each round of the game
+        jeopardyRound = doc.getElementById("jeopardy_round");
+        doubleJeopardyRound = doc.getElementById("double_jeopardy_round");
+        finalJeopardyRound = doc.getElementById("final_jeopardy_round");
+
+        // These 3 lines get the categories, clues and clueDivs for the regular Jeopardy round
+        // jeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
+        jeopardyCategories = jeopardyRound.getElementsByClass("category_name");
+        jeopardyClues = jeopardyRound.getElementsByClass("clue_text");
+        jeopardyClueDivs = jeopardyRound.getElementsByClass("clue");
+
+        // These 3 lines get the categories, clues and clueDivs for the double Jeopardy round
+        // doubleJeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
+        doubleJeopardyCategories = doubleJeopardyRound.getElementsByClass("category_name");
+        doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
+        doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
+
+        finalJeopardyCategory = finalJeopardyRound.getElementsByClass("category_name");
+        finalJeopardyClue = finalJeopardyRound.getElementById("clue_FJ");
+        finalJeopardyClueDiv = finalJeopardyRound.getElementsByClass("category");
+
+        // Parse page's title to get show number for debugging purposes
+        showNum = doc.title().split("#")[1].split(",")[0];
+    }
+
+    /*
+    FUNCTION: printRound
+    PURPOSE: prints the categories/clues/responses for specified round.
+             Mainly used for debugging to see clue info
+    @param int roundNum: 1 for regular jeopardy round, 2 for double jeopardy, 3 for final.
+    @return none
+     */
     private void printRound(int roundNum) {
 
         int clueIndex = 0;
@@ -138,7 +155,32 @@ public class Controller {
         }
     }
 
-    private void populateArrays() {
+    /*
+    FUNCTION: populateArrays
+    PURPOSE: Sets ArrayLists for jeopardy and double jeopardy round clues/responses
+             Also sets 2 String[] to hold category names
+    @param none
+    @return boolean: true if successful setting up of Arrays/ArrayLists
+     */
+    private boolean populateArrays() {
+
+        int catIndex = 0;
+
+        for (Element el: jeopardyCategories) {
+            jeopardyCategoriesArray[catIndex++] = el.text();
+        }
+
+        catIndex = 0;
+
+        for (Element el: doubleJeopardyCategories) {
+            doubleJeopardyCategoriesArray[catIndex++] = el.text();
+        }
+
+        if (jeopardyCategories.size() < 6 || doubleJeopardyCategories.size() < 6) {
+            System.out.println("ERROR: Missing categories in show #" + showNum);
+            return false;
+        }
+
         for (Element clue: jeopardyClues) {
             jeopardyCluesAL.add(String.valueOf(clue));
         }
@@ -154,10 +196,16 @@ public class Controller {
         for (Element clueDiv: doubleJeopardyClueDivs) {
             doubleJeopardyResponsesAL.add(findResponse(clueDiv));
         }
-
+        return true;
     }
 
-
+    /*
+    FUNCTION: checkData
+    PURPOSE: prints scraped data information. Number of categories found, clues found,
+             clueDivs (containing correct response) found, for each round.
+    @param none
+    @return none
+     */
     private void checkData() {
         System.out.println("Jeopardy Round Categories Found " + jeopardyCategories.size());
         System.out.println("Jeopardy Round Clues Found " + jeopardyClues.size());
@@ -171,8 +219,8 @@ public class Controller {
 
     /*
     FUNCTION: findResponse
-    @param: Element clueDiv - containing the correct response as a JS string within
-    @return: String - the parsed correct response
+    @param Element clueDiv - containing the correct response as a JS string within
+    @return String - the parsed correct response
      */
     private String findResponse(Element clueDiv) {
         String correctResponse = "";
@@ -194,6 +242,15 @@ public class Controller {
         return correctResponse;
     }
 
+    /*
+    FUNCTION: padClues
+    PURPOSE: Looks through correct response ArrayList for blank/missing answer divs.
+             If found, sets the corresponding clue indexed in clues ArrayList to
+             'BLANK' so that the clues line up with the appropriate response.
+    @param ArrayList<String> clueArray: used to hold the clues for the given round
+    @param ArrayList<String> responseArray: used to hold the responses for the given round
+    @return none
+     */
     private void padClues(ArrayList<String> clueArray, ArrayList<String> responseArray) {
         if (clueArray.size() == 30) {
             return;
@@ -208,6 +265,12 @@ public class Controller {
         }
     }
 
+    /*
+    FUNCTION: cleanClues
+    PURPOSE: Remove all HTML tags from the clues, and replace with regular characters
+    @param ArrayList<String> clueArray: holds the clues for the given round
+    @return none
+     */
     private void cleanClues(ArrayList<String> clueArray) {
         int index = 0;
         while (index < clueArray.size()) {
