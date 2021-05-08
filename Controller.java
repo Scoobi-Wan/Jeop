@@ -4,12 +4,30 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import java.util.ArrayList;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 
 public class Controller {
+
+    String[] jeopardyCategoriesArray;
+    String[] doubleJeopardyCategoriesArray;
+    ArrayList<String> jeopardyCluesAL;
+    ArrayList<String> jeopardyResponsesAL;
+    ArrayList<String> doubleJeopardyCluesAL;
+    ArrayList<String> doubleJeopardyResponsesAL;
+    Element jeopardyRound;
+    Element doubleJeopardyRound;
+    Element finalJeopardyRound;
+    Elements jeopardyCategories;
+    Elements jeopardyClues;
+    Elements jeopardyClueDivs;
+    Elements doubleJeopardyCategories;
+    Elements doubleJeopardyClues;
+    Elements doubleJeopardyClueDivs;
+    Elements finalJeopardyCategory;
+    Element finalJeopardyClue;
+    Elements finalJeopardyClueDiv;
 
 
     /*
@@ -24,7 +42,7 @@ public class Controller {
 
         // try used to connect to j-Archive using jsoup library
         try {
-            Document doc = Jsoup.connect("https://www.j-archive.com/showgame.php?game_id=6695").get();
+            Document doc = Jsoup.connect("https://www.j-archive.com/showgame.php?game_id=6696").get();
 
             // Parse page's title to get show number for debugging purposes
             String showNum = doc.title().split("#")[1].split(",")[0];
@@ -32,29 +50,31 @@ public class Controller {
             // System.out.printf("Title: %s\n", doc.title());
 
             // These 3 lines get the elements containing each round of the game
-            Element jeopardyRound = doc.getElementById("jeopardy_round");
-            Element doubleJeopardyRound = doc.getElementById("double_jeopardy_round");
-            Element finalJeopardyRound = doc.getElementById("final_jeopardy_round");
+            jeopardyRound = doc.getElementById("jeopardy_round");
+            doubleJeopardyRound = doc.getElementById("double_jeopardy_round");
+            finalJeopardyRound = doc.getElementById("final_jeopardy_round");
 
             // These 3 lines get the categories, clues and clueDivs for the regular Jeopardy round
             // jeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
-            Elements jeopardyCategories = jeopardyRound.getElementsByClass("category_name");
-            Elements jeopardyClues = jeopardyRound.getElementsByClass("clue_text");
-            Elements jeopardyClueDivs = jeopardyRound.getElementsByClass("clue");
+            jeopardyCategories = jeopardyRound.getElementsByClass("category_name");
+            jeopardyClues = jeopardyRound.getElementsByClass("clue_text");
+            jeopardyClueDivs = jeopardyRound.getElementsByClass("clue");
 
             // These 3 lines get the categories, clues and clueDivs for the double Jeopardy round
             // doubleJeopardyClueDivs is the <div> containing the correct response which is hidden in JS code
-            Elements doubleJeopardyCategories = doubleJeopardyRound.getElementsByClass("category_name");
-            Elements doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
-            Elements doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
+            doubleJeopardyCategories = doubleJeopardyRound.getElementsByClass("category_name");
+            doubleJeopardyClues = doubleJeopardyRound.getElementsByClass("clue_text");
+            doubleJeopardyClueDivs = doubleJeopardyRound.getElementsByClass("clue");
 
-
-            String[] jeopardyCategoriesArray = new String[6];
-            String[] doubleJeopardyCategoriesArray = new String[6];
-            ArrayList<String> jeopardyCluesAL = new ArrayList<String>();
-            ArrayList<String> jeopardyResponsesAL = new ArrayList<String>();
-            ArrayList<String> doubleJeopardyCluesAL = new ArrayList<String>();
-            ArrayList<String> doubleJeopardyResponsesAL = new ArrayList<String>();
+            finalJeopardyCategory = finalJeopardyRound.getElementsByClass("category_name");
+            finalJeopardyClue = finalJeopardyRound.getElementById("clue_FJ");
+            finalJeopardyClueDiv = finalJeopardyRound.getElementsByClass("category");
+            jeopardyCategoriesArray = new String[6];
+            doubleJeopardyCategoriesArray = new String[6];
+            jeopardyCluesAL = new ArrayList<String>();
+            jeopardyResponsesAL = new ArrayList<String>();
+            doubleJeopardyCluesAL = new ArrayList<String>();
+            doubleJeopardyResponsesAL = new ArrayList<String>();
 
             // LOOP: Adds category names to array, removing HTML
             int catIndex = 0;
@@ -67,55 +87,20 @@ public class Controller {
 
             //Mainly used for debugging + to see if missing anything in scrape
 
-            System.out.println("Jeopardy Round Categories Found " + jeopardyCategories.size());
-            System.out.println("Jeopardy Round Clues Found " + jeopardyClues.size());
-            System.out.println("Jeopardy Round ClueDivs Found " + jeopardyClueDivs.size());
-            System.out.println("Double Jeopardy Round Categories Found " + doubleJeopardyCategories.size());
-            System.out.println("Double Jeopardy Round Clues Found " + doubleJeopardyClues.size());
-            System.out.println("Double Jeopardy Round ClueDivs Found " + doubleJeopardyClueDivs.size());
-
-
             if (jeopardyCategories.size() < 6 || doubleJeopardyCategories.size() < 6) {
                 System.out.println("ERROR: Missing categories in show #" + showNum);
                 return false;
             }
 
 
-            for (Element clue: jeopardyClues) {
-                jeopardyCluesAL.add(String.valueOf(clue));
-            }
-
-            for (Element clue: doubleJeopardyClues) {
-                doubleJeopardyCluesAL.add(String.valueOf(clue));
-            }
-
-            for (Element clueDiv: jeopardyClueDivs) {
-                jeopardyResponsesAL.add(findResponse(clueDiv));
-            }
-
-            for (Element clueDiv: doubleJeopardyClueDivs) {
-                doubleJeopardyResponsesAL.add(findResponse(clueDiv));
-            }
+            populateArrays();
 
             cleanClues(jeopardyCluesAL);
             cleanClues(doubleJeopardyCluesAL);
             padClues(jeopardyCluesAL, jeopardyResponsesAL);
             padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
 
-            int clueIndex = 0;
-            String currentCategory = "";
-            for (String clue: jeopardyCluesAL) {
-                currentCategory = jeopardyCategoriesArray[clueIndex % 6];
-                System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex++ + 1) + " " + clue);
-            } clueIndex = 0;
-
-            for (String clue: doubleJeopardyCluesAL) {
-                currentCategory = doubleJeopardyCategoriesArray[clueIndex % 6];
-                System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex++ + 1) + " " + clue);
-            }
-
-
-
+            printRound(3);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -124,6 +109,66 @@ public class Controller {
         return true;
 
     }
+
+    private void printRound(int roundNum) {
+
+        int clueIndex = 0;
+        String currentCategory = "";
+
+        switch(roundNum) {
+            case 1:
+                for (String clue: jeopardyCluesAL) {
+                    currentCategory = jeopardyCategoriesArray[clueIndex % 6];
+                    System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex + 1) + " " + clue);
+                    System.out.println("CORRECT RESPONSE: " + jeopardyResponsesAL.get(clueIndex++));
+                    System.out.println();
+                }
+                break;
+            case 2:
+                for (String clue: doubleJeopardyCluesAL) {
+                    currentCategory = doubleJeopardyCategoriesArray[clueIndex % 6];
+                    System.out.println("CATEGORY: " + currentCategory + "  CLUE: " + (clueIndex + 1) + " " + clue);
+                    System.out.println("CORRECT RESPONSE: " + doubleJeopardyResponsesAL.get(clueIndex++));
+                    System.out.println();
+                } break;
+            case 3:
+                System.out.println("CATEGORY: " + finalJeopardyCategory.text());
+                System.out.println("CLUE: " + finalJeopardyClue.text());
+                System.out.println("CORRECT RESPONSE: " + findResponse(finalJeopardyClueDiv.last()));
+                System.out.println(finalJeopardyClueDiv.last());
+        }
+    }
+
+    private void populateArrays() {
+        for (Element clue: jeopardyClues) {
+            jeopardyCluesAL.add(String.valueOf(clue));
+        }
+
+        for (Element clue: doubleJeopardyClues) {
+            doubleJeopardyCluesAL.add(String.valueOf(clue));
+        }
+
+        for (Element clueDiv: jeopardyClueDivs) {
+            jeopardyResponsesAL.add(findResponse(clueDiv));
+        }
+
+        for (Element clueDiv: doubleJeopardyClueDivs) {
+            doubleJeopardyResponsesAL.add(findResponse(clueDiv));
+        }
+
+    }
+
+
+    private void checkData() {
+        System.out.println("Jeopardy Round Categories Found " + jeopardyCategories.size());
+        System.out.println("Jeopardy Round Clues Found " + jeopardyClues.size());
+        System.out.println("Jeopardy Round ClueDivs Found " + jeopardyClueDivs.size());
+        System.out.println("Double Jeopardy Round Categories Found " + doubleJeopardyCategories.size());
+        System.out.println("Double Jeopardy Round Clues Found " + doubleJeopardyClues.size());
+        System.out.println("Double Jeopardy Round ClueDivs Found " + doubleJeopardyClueDivs.size());
+    }
+
+
 
     /*
     FUNCTION: findResponse
@@ -137,12 +182,12 @@ public class Controller {
         if (clueDivPieces.length > 1) {
             correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
             correctResponse = correctResponse.replace("&lt;//i&gt;", "");
-            clueDivPieces = correctResponse.split("&lt;");
-            correctResponse = clueDivPieces[0].replace("&amp;", "&");
+            correctResponse = correctResponse.replace("&amp;", "&");
             correctResponse = correctResponse.replace("&quot;", "\"");
             correctResponse = correctResponse.replace("<i>", "");
             correctResponse = correctResponse.replace("</i>", "");
-            clueDivPieces = correctResponse.split("</em>");
+            clueDivPieces = correctResponse.split("&lt;");
+            clueDivPieces = clueDivPieces[0].split("</em>");
             correctResponse = clueDivPieces[0];
         }
         return correctResponse;
