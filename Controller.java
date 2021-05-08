@@ -135,7 +135,6 @@ public class Controller {
                 System.out.println("CATEGORY: " + finalJeopardyCategory.text());
                 System.out.println("CLUE: " + finalJeopardyClue.text());
                 System.out.println("CORRECT RESPONSE: " + findResponse(finalJeopardyClueDiv.last()));
-                System.out.println(finalJeopardyClueDiv.last());
         }
     }
 
@@ -176,20 +175,22 @@ public class Controller {
     @return: String - the parsed correct response
      */
     private String findResponse(Element clueDiv) {
-
         String correctResponse = "";
         String[] clueDivPieces = String.valueOf(clueDiv).split("correct_response&quot;>");
-        if (clueDivPieces.length > 1) {
+        if (clueDivPieces.length < 2) {
+            clueDivPieces = String.valueOf(clueDiv).split("correct_response\\\\&quot;>");
+        }
             correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
             correctResponse = correctResponse.replace("&lt;//i&gt;", "");
             correctResponse = correctResponse.replace("&amp;", "&");
             correctResponse = correctResponse.replace("&quot;", "\"");
+        correctResponse = correctResponse.replace("\\'", "\'");
             correctResponse = correctResponse.replace("<i>", "");
             correctResponse = correctResponse.replace("</i>", "");
-            clueDivPieces = correctResponse.split("&lt;");
-            clueDivPieces = clueDivPieces[0].split("</em>");
+            clueDivPieces = correctResponse.split("</em>");
             correctResponse = clueDivPieces[0];
-        }
+            System.out.println(correctResponse);
+
         return correctResponse;
     }
 
