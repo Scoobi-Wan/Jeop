@@ -215,6 +215,24 @@ public class Controller {
         System.out.println("Double Jeopardy Round ClueDivs Found " + doubleJeopardyClueDivs.size());
     }
 
+    public String getClue(int roundNumber, int clueNumber) {
+        clueNumber--;
+        if (clueNumber < 0 || clueNumber > 29) {
+            System.out.println("Invalid clue number. Please enter a number 1-30.");
+        }
+        if (roundNumber == 1) {
+            return jeopardyCluesAL.get(clueNumber);
+        } else if (roundNumber == 2) {
+            return doubleJeopardyCluesAL.get(clueNumber);
+        } else if (roundNumber == 3) {
+            return finalJeopardyClue.text();
+        }
+
+        return "Invalid round number. Please enter 1 (Regular), 2 (Double), or 3 (Final).";
+
+
+    }
+
 
 
     /*
