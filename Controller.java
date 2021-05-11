@@ -72,6 +72,44 @@ public class Controller {
                 padClues(jeopardyCluesAL, jeopardyResponsesAL);
                 padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
 
+                // clueValue is used for insertion into DB
+                int clueValue = 200;
+
+                // when this reaches 6, reset to 0 and increment clueValue
+                int clueIndex = 0;
+
+                for (String clue:
+                     jeopardyCluesAL) {
+                    if (clueIndex % 6 == 0 && clueIndex != 0) {    // Reached the end of the row, increment value.
+                        clueValue += 200;
+                    }
+
+                    System.out.println(jeopardyCategoriesArray[clueIndex % 6] + " " + clueValue + " - " +
+                            jeopardyCluesAL.get(clueIndex) + " - " + jeopardyResponsesAL.get(clueIndex));
+
+                    clueIndex++;
+
+                }
+
+                // set clueValue to 400 for first row of double jeopardy round
+                clueValue = 400;
+                clueIndex = 0;
+
+                for (String clue:
+                     doubleJeopardyCluesAL) {
+                    if (clueIndex % 6 == 0 && clueIndex != 0) {
+                        clueValue += 400;
+                    }
+
+                    System.out.println(doubleJeopardyCategoriesArray[clueIndex % 6] + " " + clueValue + " - " +
+                            doubleJeopardyCluesAL.get(clueIndex) + " - " + doubleJeopardyResponsesAL.get(clueIndex));
+
+                    clueIndex++;
+
+                }
+
+
+
                 currentGame++;
 
             }
@@ -272,7 +310,6 @@ public class Controller {
             correctResponse = correctResponse.replace("</i>", "");
             clueDivPieces = correctResponse.split("</em>");
             correctResponse = clueDivPieces[0];
-            System.out.println(correctResponse);
 
         return correctResponse;
     }
