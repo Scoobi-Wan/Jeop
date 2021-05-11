@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Controller {
 
@@ -39,30 +40,43 @@ public class Controller {
              including categories, clues, correct responses, dollar amount, show date.
              Stores clue information in a database using JDBC
      */
-    public boolean scrapeGames() {
+    public boolean scrapeGames(int firstGame, int lastGame) {
 
         // try used to connect to j-Archive using jsoup library
         try {
-            Document doc = Jsoup.connect("https://www.j-archive.com/showgame.php?game_id=6696").get();
 
-            // Calls method to set all the Element(s) variables
-            getTheElements(doc);
+            int currentGame = firstGame;
 
-            // Calls method to initialize arrays for categories/clues/responses
-            initializeArrays();
+            while (currentGame < lastGame) {
 
-            // if populateArrays() fails, skip this game (missing info)
-            if (populateArrays() == false) {
-                System.out.println("This will be useful when we are in a loop later!");
+                String jURL = "https://www.j-archive.com/showgame.php?game_id=";
+
+                Document doc = Jsoup.connect(jURL + currentGame).get();
+
+                // Calls method to set all the Element(s) variables
+                getTheElements(doc);
+
+                // Calls method to initialize arrays for categories/clues/responses
+                initializeArrays();
+
+                // if populateArrays() fails, skip this game (missing info)
+                if (populateArrays() == false) {
+                    System.out.println("This will be useful when we are in a loop later!");
+                }
+
+                // Call method to remove all HTML from the clue text for each round
+                cleanClues(jeopardyCluesAL);
+                cleanClues(doubleJeopardyCluesAL);
+
+                // Call method to add 'BLANK' clues as placeholders to keep clues/responses aligned
+                padClues(jeopardyCluesAL, jeopardyResponsesAL);
+                padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
+
+                currentGame++;
+
             }
 
-            // Call method to remove all HTML from the clue text for each round
-            cleanClues(jeopardyCluesAL);
-            cleanClues(doubleJeopardyCluesAL);
 
-            // Call method to add 'BLANK' clues as placeholders to keep clues/responses aligned
-            padClues(jeopardyCluesAL, jeopardyResponsesAL);
-            padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -246,11 +260,14 @@ public class Controller {
         if (clueDivPieces.length < 2) {
             clueDivPieces = String.valueOf(clueDiv).split("correct_response\\\\&quot;>");
         }
+        if (clueDivPieces.length == 1) {
+            return "BLANK";
+        }
             correctResponse = clueDivPieces[1].replace("&lt;i&gt;", "");
             correctResponse = correctResponse.replace("&lt;//i&gt;", "");
             correctResponse = correctResponse.replace("&amp;", "&");
             correctResponse = correctResponse.replace("&quot;", "\"");
-        correctResponse = correctResponse.replace("\\'", "\'");
+            correctResponse = correctResponse.replace("\\'", "\'");
             correctResponse = correctResponse.replace("<i>", "");
             correctResponse = correctResponse.replace("</i>", "");
             clueDivPieces = correctResponse.split("</em>");
@@ -275,7 +292,7 @@ public class Controller {
         } else {
             int index = 0;
             while (index < 30) {
-                if (responseArray.get(index).equals("")) {
+                if (responseArray.get(index).equals("") || responseArray.get(index).equals("BLANK")) {
                     clueArray.add(index, "BLANK");
                 }
                 index++;
