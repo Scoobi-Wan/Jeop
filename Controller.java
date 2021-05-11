@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -31,6 +32,51 @@ public class Controller {
     Elements finalJeopardyClueDiv;
     String showNum;
 
+    private Connection connect = null;
+    private Statement statement = null;
+    private PreparedStatement preparedStatement = null;
+    private ResultSet resultSet = null;
+
+
+
+
+    private void insertClueData(String clueText, String clueCategory, String clueResponse, String clueValue,
+                                    String clueRound, String clueMeta) throws Exception {
+        try {
+            Class.forName("com.mysql.jdbc.Driver"); // Load the MySQL driver
+
+            connect = DriverManager.getConnection("jdbc:mysql://localhost/feedback?"
+                        + "user=root&password=TheBucsWonSuperBowl55!");
+
+            // use ?s as placeholder variables
+            preparedStatement = connect.prepareStatement("insert into clues.clue_data values (default, ?, ?,"
+                        + "?, ?, ?, ?");
+
+            // assign variable to replace ? placeholders above
+            preparedStatement.setString(1, clueText);
+            preparedStatement.setString(2, clueCategory);
+            preparedStatement.setString(3, clueResponse);
+            preparedStatement.setString(4, clueValue);
+            preparedStatement.setString(5, clueRound);
+            preparedStatement.setString(6, clueMeta);
+
+            // execute the SQL statement
+            preparedStatement.executeUpdate();
+
+
+
+
+
+
+
+
+        }
+
+        catch (Exception e) {
+            throw e;
+        }
+    }
+
 
     /*
     FUNCTION: scrapeGames
@@ -41,6 +87,8 @@ public class Controller {
              Stores clue information in a database using JDBC
      */
     public boolean scrapeGames(int firstGame, int lastGame) {
+
+
 
         // try used to connect to j-Archive using jsoup library
         try {
@@ -71,6 +119,59 @@ public class Controller {
                 // Call method to add 'BLANK' clues as placeholders to keep clues/responses aligned
                 padClues(jeopardyCluesAL, jeopardyResponsesAL);
                 padClues(doubleJeopardyCluesAL, doubleJeopardyResponsesAL);
+
+                // clueValue is used for insertion into DB
+                int clueValue = 200;
+
+                // when this reaches 6, reset to 0 and increment clueValue
+                int clueIndex = 0;
+
+                String clueText;
+                String clueCategory;
+                String clueResponse;
+                String clueValueString;
+                String clueRound;
+                String clueMeta;
+
+                for (String clue:
+                     jeopardyCluesAL) {
+                    if (clueIndex % 6 == 0 && clueIndex != 0) {    // Reached the end of the row, increment value.
+                        clueValue += 200;
+                    }
+
+                    clueText = jeopardyCluesAL.get(clueIndex);
+                    clueCategory = jeopardyCategoriesArray[clueIndex % 6];
+                    clueResponse = jeopardyResponsesAL.get(clueIndex);
+                    clueValueString = String.valueOf(clueValue);
+                    clueRound = "1";
+                    clueMeta = String.valueOf(showNum);
+
+                    clueIndex++;
+
+                }
+
+                // set clueValue to 400 for first row of double jeopardy round
+                clueValue = 400;
+                clueIndex = 0;
+
+                for (String clue:
+                     doubleJeopardyCluesAL) {
+                    if (clueIndex % 6 == 0 && clueIndex != 0) {
+                        clueValue += 400;
+                    }
+
+                    clueText = doubleJeopardyCluesAL.get(clueIndex);
+                    clueCategory = doubleJeopardyCategoriesArray[clueIndex];
+                    clueResponse = doubleJeopardyResponsesAL.get(clueIndex);
+                    clueValueString = String.valueOf(clueValue);
+                    clueRound = "2";
+                    clueMeta = String.valueOf(showNum);
+
+                    clueIndex++;
+
+                }
+
+
 
                 currentGame++;
 
@@ -272,7 +373,6 @@ public class Controller {
             correctResponse = correctResponse.replace("</i>", "");
             clueDivPieces = correctResponse.split("</em>");
             correctResponse = clueDivPieces[0];
-            System.out.println(correctResponse);
 
         return correctResponse;
     }
