@@ -43,14 +43,12 @@ public class Controller {
     private void insertClueData(String clueText, String clueCategory, String clueResponse, String clueValue,
                                     String clueRound, String clueMeta) throws Exception {
         try {
-            Class.forName("com.mysql.jdbc.Driver"); // Load the MySQL driver
 
-            connect = DriverManager.getConnection("jdbc:mysql://localhost/feedback?"
-                        + "user=root&password=TheBucsWonSuperBowl55!");
+            connect = DriverManager.getConnection("jdbc:mysql://localhost/clues?"
+                        + "user=user&password=pw");
 
             // use ?s as placeholder variables
-            preparedStatement = connect.prepareStatement("insert into clues.clue_data values (default, ?, ?,"
-                        + "?, ?, ?, ?");
+            preparedStatement = connect.prepareStatement("insert into clue_data values (default, ?, ?, ?, ?, ?, ?)");
 
             // assign variable to replace ? placeholders above
             preparedStatement.setString(1, clueText);
@@ -62,13 +60,6 @@ public class Controller {
 
             // execute the SQL statement
             preparedStatement.executeUpdate();
-
-
-
-
-
-
-
 
         }
 
@@ -88,14 +79,19 @@ public class Controller {
      */
     public boolean scrapeGames(int firstGame, int lastGame) {
 
-
-
         // try used to connect to j-Archive using jsoup library
         try {
 
             int currentGame = firstGame;
 
             while (currentGame < lastGame) {
+
+                String clueText;
+                String clueCategory;
+                String clueResponse;
+                String clueValueString;
+                String clueRound;
+                String clueMeta;
 
                 String jURL = "https://www.j-archive.com/showgame.php?game_id=";
 
@@ -109,7 +105,7 @@ public class Controller {
 
                 // if populateArrays() fails, skip this game (missing info)
                 if (populateArrays() == false) {
-                    System.out.println("This will be useful when we are in a loop later!");
+                    continue;
                 }
 
                 // Call method to remove all HTML from the clue text for each round
@@ -126,12 +122,7 @@ public class Controller {
                 // when this reaches 6, reset to 0 and increment clueValue
                 int clueIndex = 0;
 
-                String clueText;
-                String clueCategory;
-                String clueResponse;
-                String clueValueString;
-                String clueRound;
-                String clueMeta;
+                clueMeta = doc.title().split(" - ")[1];
 
                 for (String clue:
                      jeopardyCluesAL) {
@@ -144,7 +135,11 @@ public class Controller {
                     clueResponse = jeopardyResponsesAL.get(clueIndex);
                     clueValueString = String.valueOf(clueValue);
                     clueRound = "1";
-                    clueMeta = String.valueOf(showNum);
+
+                    if (!clueText.equals("BLANK") && !clueResponse.equals("BLANK")) {
+                        insertClueData(clueText, clueCategory, clueResponse, clueValueString, clueRound, clueMeta);
+                    }
+
 
                     clueIndex++;
 
@@ -161,17 +156,18 @@ public class Controller {
                     }
 
                     clueText = doubleJeopardyCluesAL.get(clueIndex);
-                    clueCategory = doubleJeopardyCategoriesArray[clueIndex];
+                    clueCategory = doubleJeopardyCategoriesArray[clueIndex % 6];
                     clueResponse = doubleJeopardyResponsesAL.get(clueIndex);
                     clueValueString = String.valueOf(clueValue);
                     clueRound = "2";
-                    clueMeta = String.valueOf(showNum);
+
+                    if (!clueText.equals("BLANK") && !clueResponse.equals("BLANK")) {
+                        insertClueData(clueText, clueCategory, clueResponse, clueValueString, clueRound, clueMeta);
+                    }
 
                     clueIndex++;
 
                 }
-
-
 
                 currentGame++;
 
@@ -180,6 +176,8 @@ public class Controller {
 
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
