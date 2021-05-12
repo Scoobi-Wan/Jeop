@@ -45,7 +45,7 @@ public class Controller {
         try {
 
             connect = DriverManager.getConnection("jdbc:mysql://localhost/clues?"
-                        + "user=user&password=pw");
+                        + "user=root&password=TheBucsWonSuperBowl55!");
 
             // use ?s as placeholder variables
             preparedStatement = connect.prepareStatement("insert into clue_data values (default, ?, ?, ?, ?, ?, ?)");
